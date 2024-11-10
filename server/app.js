@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectDB from "./Config/database.js";
+import FormRouter from "./Routes/formRouter.js";
+import UserRouter from "./Routes/userRouter.js";
 
 dotenv.config();
 connectDB();
@@ -18,5 +20,8 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
+
+app.use("/form",FormRouter);
+app.use('/user',UserRouter);
 
 export default app;
