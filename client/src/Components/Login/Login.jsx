@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from "react-router-dom";
 import { Form, Input, Button, Card, Typography, message } from 'antd';
 import axios from "axios"
@@ -9,15 +8,22 @@ const { Title } = Typography;
 
 const Login = () => {
   const navigate = useNavigate();
+
   const onFinish = async (values) => {
     try {
       const response = await axios.post(`${API_URL}/user/loginuser`, {
         emailId: values.email,
         password: values.password,
+        name: values.yourName,
+        useremail:values.yourEmailID
       });
 
       if (response.data.status === "200") {
-        localStorage.setItem("currentUser", values.yourEmailID);
+        localStorage.setItem("currentUser", JSON.stringify({
+          name: values.yourName,
+          email: values.yourEmailID,
+          Role:response.data.role
+        }));
         localStorage.setItem("token", response.data.token);
         message.success("Login successful!");
         setTimeout(() => {
@@ -45,7 +51,7 @@ const Login = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md shadow-lg rounded-lg">
         <div className="text-center mb-6">
-          <Title level={2} className="text-blue-600">Login</Title>
+          <Title level={2} className="text-blue-600">Guest Wifi Login</Title>
           <p className="text-gray-500">Please enter your login credentials and email ID</p>
         </div>
         <Form
@@ -80,7 +86,16 @@ const Login = () => {
             <Input.Password prefix={<LockOutlined className="text-gray-400" />} placeholder="Enter your password" />
           </Form.Item>
 
-          {/* Additional Email ID Field at the Bottom */}
+            {/* Your Name - New Input Field */}
+          <Form.Item
+            label="Your Name"
+            name="yourName"
+            rules={[{ required: true, message: 'Please input your name!' }]}
+          >
+            <Input prefix={<UserOutlined className="text-gray-400" />} placeholder="Enter your name" />
+          </Form.Item>
+
+          {/* Your Email ID */}
           <Form.Item
             label="Your Email ID"
             name="yourEmailID"
