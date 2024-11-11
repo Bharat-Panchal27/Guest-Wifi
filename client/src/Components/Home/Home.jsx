@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
-import { Form, Input, Checkbox, Button, Row, Col, Card, Typography } from 'antd';
+import { Form, Input, Checkbox, Button, Row, Col, Card, Typography,message } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import axios from "axios";
 import { API_URL } from '../../utils/config';
@@ -17,7 +18,7 @@ const Home = () => {
         const currentDate = new Date();
         const date = `${currentDate.getDate()}-${currentDate.toLocaleString('default', { month: 'short' })}-${currentDate.getFullYear().toString().slice(-2)}`;
         const time = currentDate.toLocaleTimeString('en-US', { hour12: false });
-
+    
         const payload = {
             formData: {
                 ...values,
@@ -27,7 +28,7 @@ const Home = () => {
                 isWifiProvided: "Pending"
             }
         };
-
+    
         try {
             // Make the API call
             const response = await axios.post(`${API_URL}/form/create`, payload, {
@@ -35,10 +36,11 @@ const Home = () => {
                     'Content-Type': 'application/json',
                 },
             });
-
+    
             // Check for successful response
             if (response.status === 200) {
                 console.log('Form submitted successfully:', response.data);
+                message.success('Form submitted successfully!');  // Success message
                 // Reset form fields after successful submission
                 form.resetFields();
                 setDeviceType([]);
@@ -47,9 +49,11 @@ const Home = () => {
                 setIsOtherPurpose(false);
             } else {
                 console.error('Failed to submit form:', response.data);
+                message.error('Failed to submit form. Please try again.');  // Error message
             }
         } catch (error) {
             console.error('Error submitting form:', error);
+            message.error('Error submitting form. Please check your network or try again later.');  // Error message
         }
     };
 

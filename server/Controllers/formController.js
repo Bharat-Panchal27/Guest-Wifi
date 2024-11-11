@@ -1,6 +1,5 @@
 import WifiFormData from "../Models/formModel.js";
 
-// Create function to add data to MongoDB
 export const Create = async (req, res) => {
     const { formData } = req.body;
     try {
@@ -12,17 +11,39 @@ export const Create = async (req, res) => {
     }
 };
 
-// Get All function to retrieve all documents
-export const GetAll = async (req, res) => {
-    const { headEmail } = req.body;
+export const Update = async (req, res) => {
+    const { id, formData } = req.body;
     try {
-        const forms = await WifiFormData.find({ headEmail });
-        
+        const form = await WifiFormData.findByIdAndUpdate(id, formData, { new: true });
+        if (!form) {
+            return res.status(404).json({ status: "404", message: "Data not found" });
+        }
+        res.json({ status: "200", message: "Data updated successfully", data: form });
+    } catch (error) {
+        res.json({ status: "500", message: error.message });
+    }
+}
+
+export const GetAll = async (req, res) => {
+    const { headEmail, Role } = req.body;
+
+    try {
+        let query = {};
+
+        if (Role === 'Admin') {
+            query.headEmail = headEmail;
+        } else if (Role === 'System Admin') {
+            query.isApproved = { $regex: "^Approved", $options: "i" }; // Fetch records where isApproved starts with "Approved" (case-insensitive)
+        }
+
+        const forms = await WifiFormData.find(query);
+
         res.json({ status: "200", message: "Data retrieved successfully", data: forms });
     } catch (error) {
         res.json({ status: "500", message: error.message });
     }
 };
+
 
 
 export const GetById = async (req, res) => {
