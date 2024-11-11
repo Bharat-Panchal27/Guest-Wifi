@@ -1,6 +1,5 @@
-/* eslint-disable no-unused-vars */
 import React, { useState } from 'react';
-import { Form, Input, Checkbox, Button, Row, Col, Card, Typography,message } from 'antd';
+import { Form, Input, Checkbox, Button, Row, Col, Card, Typography, message, Spin } from 'antd';
 import { UserOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import axios from "axios";
 import { API_URL } from '../../utils/config';
@@ -13,12 +12,14 @@ const Home = () => {
     const [purpose, setPurpose] = useState([]);
     const [isOtherDevice, setIsOtherDevice] = useState(false);
     const [isOtherPurpose, setIsOtherPurpose] = useState(false);
+    const [loading, setLoading] = useState(false); // Loading state
 
     const onFinish = async (values) => {
+        setLoading(true); // Start loading when API call starts
         const currentDate = new Date();
         const date = `${currentDate.getDate()}-${currentDate.toLocaleString('default', { month: 'short' })}-${currentDate.getFullYear().toString().slice(-2)}`;
         const time = currentDate.toLocaleTimeString('en-US', { hour12: false });
-    
+
         const payload = {
             formData: {
                 ...values,
@@ -28,7 +29,7 @@ const Home = () => {
                 isWifiProvided: "Pending"
             }
         };
-    
+
         try {
             // Make the API call
             const response = await axios.post(`${API_URL}/form/create`, payload, {
@@ -36,24 +37,25 @@ const Home = () => {
                     'Content-Type': 'application/json',
                 },
             });
-    
+
             // Check for successful response
             if (response.status === 200) {
                 console.log('Form submitted successfully:', response.data);
-                message.success('Form submitted successfully!');  // Success message
-                // Reset form fields after successful submission
-                form.resetFields();
+                message.success('Form submitted successfully!');
+                form.resetFields(); // Reset form fields after success
                 setDeviceType([]);
                 setPurpose([]);
                 setIsOtherDevice(false);
                 setIsOtherPurpose(false);
             } else {
                 console.error('Failed to submit form:', response.data);
-                message.error('Failed to submit form. Please try again.');  // Error message
+                message.error('Failed to submit form. Please try again.');
             }
         } catch (error) {
             console.error('Error submitting form:', error);
-            message.error('Error submitting form. Please check your network or try again later.');  // Error message
+            message.error('Error submitting form. Please check your network or try again later.');
+        } finally {
+            setLoading(false); // Stop loading when API call completes
         }
     };
 
@@ -250,6 +252,7 @@ const Home = () => {
                             block
                             size="large"
                             className="bg-blue-500 text-white"
+                            loading={loading}
                         >
                             Submit for Approval
                         </Button>

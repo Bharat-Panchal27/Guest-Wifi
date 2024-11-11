@@ -14,6 +14,7 @@ const Admin = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [btnLoading, setBtnLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedData, setSelectedData] = useState(null);
   const [dateRange, setDateRange] = useState([]);
@@ -65,6 +66,7 @@ const Admin = () => {
   };
 
   const updateRequestStatusInBackend = async (id, status) => {
+    setBtnLoading(true);
     try {
       const response = await axios.put(`${API_URL}/form/update`, {
         id,
@@ -81,6 +83,8 @@ const Admin = () => {
     } catch (error) {
       message.error("Error updating status");
       console.error("API call error:", error);
+    } finally{
+      setBtnLoading(false);
     }
   };
 
@@ -198,6 +202,7 @@ const Admin = () => {
                   handleApprove(record._id);
                 }}
                 className="bg-green-500 hover:bg-green-600 text-white border-none"
+                loading={btnLoading}
               >
                 Approve
               </Button>
@@ -209,6 +214,7 @@ const Admin = () => {
                   handleReject(record._id);
                 }}
                 className="bg-red-500 hover:bg-red-600 text-white border-none"
+                loading={btnLoading}
               >
                 Reject
               </Button>
