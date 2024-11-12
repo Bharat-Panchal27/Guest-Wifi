@@ -28,7 +28,7 @@ const SystemAdmin = () => {
       return;
     }
 
-    setCurrUserEmail(currentUser.email);
+    setCurrUserEmail(currentUser.email.toLowerCase());
 
     if (currentUser.email) {
       fetchData(currentUser.email);
@@ -37,7 +37,10 @@ const SystemAdmin = () => {
 
   const fetchData = async (headEmail) => {
     setLoading(true);
-    const payload = { headEmail, Role: "System Admin" };
+    const payload = { 
+      headEmail: headEmail.toLowerCase(),
+      Role: "System Admin"
+    };
     try {
       const response = await axios.post(`${API_URL}/form/getall`, payload, {
         headers: { "Content-Type": "application/json" },
@@ -98,6 +101,10 @@ const SystemAdmin = () => {
   };
 
   const handleFilter = () => {
+    if(!dateRange && !emailFilter){
+      setFilteredData(data);
+      return;
+    }
     const [startDate, endDate] = dateRange;
     const filtered = data
       .filter((item) => {

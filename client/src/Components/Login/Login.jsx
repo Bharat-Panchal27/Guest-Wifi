@@ -21,7 +21,7 @@ const Login = () => {
       if (response.data.status === "200") {
         localStorage.setItem("currentUser", JSON.stringify({
           name: values.yourName,
-          email: values.yourEmailID,
+          email: values.yourEmailID.toLowerCase(),
           Role:response.data.role
         }));
         localStorage.setItem("token", response.data.token);
