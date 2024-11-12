@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Table, Button, message, Tag, Input, DatePicker } from "antd";
 import axios from "axios";
 import { API_URL } from "../../utils/config";
-import { CheckOutlined } from "@ant-design/icons";
+import { CheckOutlined, DownloadOutlined } from "@ant-design/icons";
+import * as XLSX from "xlsx"; // Import xlsx library for Excel export
 import DetailsModal from "../DetailsModal/DetailsModal";
 import moment from "moment";
 
@@ -37,9 +38,9 @@ const SystemAdmin = () => {
 
   const fetchData = async (headEmail) => {
     setLoading(true);
-    const payload = { 
+    const payload = {
       headEmail: headEmail.toLowerCase(),
-      Role: "System Admin"
+      Role: "System Admin",
     };
     try {
       const response = await axios.post(`${API_URL}/form/getall`, payload, {
@@ -101,7 +102,7 @@ const SystemAdmin = () => {
   };
 
   const handleFilter = () => {
-    if(!dateRange && !emailFilter){
+    if (!dateRange && !emailFilter) {
       setFilteredData(data);
       return;
     }
@@ -123,6 +124,55 @@ const SystemAdmin = () => {
       });
 
     setFilteredData(filtered);
+  };
+
+  const exportToExcel = () => {
+    const exportData = filteredData.length ? filteredData : data;
+
+    const formattedData = exportData.map((item) => {
+      const filteredItem = Object.keys(item)
+        .filter(key => !key.endsWith('_id') && !key.endsWith('_v'))
+        .reduce((obj, key) => {
+          obj[key] = item[key];
+          return obj;
+        }, {});
+    
+      return {
+        ...filteredItem,
+        deviceType: filteredItem.deviceType ? filteredItem.deviceType.join(", ") : "",
+        purpose: filteredItem.purpose ? filteredItem.purpose.join(", ") : "",
+      };
+    });
+
+    console.log('formatdata',formattedData)
+
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Guest Wifi Access");
+
+    const headerRange = XLSX.utils.decode_range(worksheet["!ref"]);
+    for (let C = headerRange.s.c; C <= headerRange.e.c; C++) {
+      const cellAddress = XLSX.utils.encode_cell({ c: C, r: 0 });
+      if (worksheet[cellAddress]) {
+        worksheet[cellAddress].s = { font: { bold: true } };
+      }
+    }
+
+    const columnWidths = [];
+    for (let C = headerRange.s.c; C <= headerRange.e.c; C++) {
+      let maxLength = 0;
+      for (let R = headerRange.s.r; R <= headerRange.e.r; R++) {
+        const cellAddress = XLSX.utils.encode_cell({ c: C, r: R });
+        const cell = worksheet[cellAddress];
+        if (cell && cell.v) {
+          maxLength = Math.max(maxLength, cell.v.toString().length);
+        }
+      }
+      columnWidths[C] = { wpx: Math.min(maxLength * 10, 200) };
+    }
+
+    worksheet["!cols"] = columnWidths;
+    XLSX.writeFile(workbook, "Guest_Wifi_Access_Report.xlsx");
   };
 
   const columns = [
@@ -206,7 +256,6 @@ const SystemAdmin = () => {
   ];
 
   const handleLogout = () => {
-    // Clear localStorage and redirect to login page
     localStorage.clear();
     window.location.href = "/private/login";
   };
@@ -231,6 +280,18 @@ const SystemAdmin = () => {
             onChange={(dates) => setDateRange(dates)}
             style={{ width: "50%" }}
           />
+          <Button
+            type="primary"
+            icon={<DownloadOutlined />}
+            onClick={exportToExcel}
+            style={{
+              backgroundColor: "green",
+              borderColor: "green",
+              color: "white",
+            }}
+          >
+            Download
+          </Button>
           <Button type="primary" onClick={handleFilter}>
             Search
           </Button>
