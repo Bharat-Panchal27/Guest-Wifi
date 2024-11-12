@@ -10,12 +10,13 @@ import {
   Card,
   Typography,
   message,
+  Divider,
 } from "antd";
 import { UserOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { API_URL } from "../../utils/config";
 
-const { Title } = Typography;
+const { Title,Text } = Typography;
 
 const Home = () => {
   const [form] = Form.useForm();
@@ -97,6 +98,26 @@ const Home = () => {
     setPurpose(checkedValues);
     setIsOtherPurpose(checkedValues.includes("Other"));
   };
+
+  const TermsAndConditions = () => (
+    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 mt-6">
+      <Title level={4} className="mb-4">Terms and Conditions</Title>
+      <Text className="text-gray-700">
+        By using the guest Wi-Fi network, you agree to the following terms and conditions:
+      </Text>
+      <ul className="list-disc ml-6 mt-4 space-y-2">
+        <li>The Wi-Fi network is for legitimate business purposes only.</li>
+        <li>Unauthorized access to internal resources is prohibited.</li>
+        <li>Downloading or distributing illegal content is prohibited.</li>
+        <li>The organization is not responsible for any loss or damage to personal devices or data.</li>
+        <li>Use of the guest network is at your own risk.</li>
+        <li>Compliance with the organization's IT policies and procedures is required.</li>
+        <li>The organization reserves the right to monitor and restrict access as needed.</li>
+        <li>Data transmitted over the guest network is not encrypted. Sensitive information should be transmitted using secure methods.</li>
+        <li>Access may be terminated at any time at the discretion of the organization.</li>
+      </ul>
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-white shadow-lg rounded-xl">
@@ -348,6 +369,28 @@ const Home = () => {
           {/* Access Required (Disabled Field) */}
           <Form.Item label="Access Required" name="accessRequired">
             <Input value="Internet Only" disabled />
+          </Form.Item>
+
+          <Divider />
+          <TermsAndConditions />
+          
+          <Form.Item
+            name="acceptTerms"
+            valuePropName="checked"
+            rules={[
+              {
+                validator: (_, value) =>
+                  value
+                    ? Promise.resolve()
+                    : Promise.reject(
+                        'Please accept the terms and conditions'
+                      ),
+              },
+            ]}
+          >
+            <Checkbox className="font-medium">
+              I have read and agree to the terms and conditions
+            </Checkbox>
           </Form.Item>
 
           {/* Submit Button */}
