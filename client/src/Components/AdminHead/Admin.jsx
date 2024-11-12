@@ -14,7 +14,8 @@ const Admin = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [btnLoading, setBtnLoading] = useState(false);
+  const [loadingApproveId, setLoadingApproveId] = useState(null); // Loading state for Approve buttons
+  const [loadingRejectId, setLoadingRejectId] = useState(null); // Loading state for Reject buttons
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedData, setSelectedData] = useState(null);
   const [dateRange, setDateRange] = useState([]);
@@ -26,14 +27,14 @@ const Admin = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-    if (!token || currentUser.Role!=="Admin" ) {
+    if (!token || currentUser.Role !== "Admin") {
       localStorage.clear();
       window.location.href = "/private/login";
       return;
     }
 
     setCurrUserName(currentUser.name);
-    setCurrUserEmail(currentUser.email);
+    setCurrUserEmail(currentUser.email.toLowerCase());
 
     if (currentUser.email) {
       fetchData(currentUser.email);
@@ -43,7 +44,6 @@ const Admin = () => {
   const fetchData = async (headEmail) => {
     setLoading(true);
     const payload = { headEmail, Role: "Admin" };
-    console.log(payload);
 
     try {
       const response = await axios.post(`${API_URL}/form/getall`, payload, {
@@ -53,7 +53,7 @@ const Admin = () => {
       if (response.data.status === "200") {
         setData(response.data.data);
         setFilteredData(response.data.data);
-        setIsDataFetched(true); 
+        setIsDataFetched(true);
       } else {
         message.error(response.data.message || "Failed to fetch data");
       }
@@ -66,7 +66,10 @@ const Admin = () => {
   };
 
   const updateRequestStatusInBackend = async (id, status) => {
-    setBtnLoading(true);
+    // Use separate loading states for Approve and Reject actions
+    if (status === "Approved") setLoadingApproveId(id);
+    else setLoadingRejectId(id);
+
     try {
       const response = await axios.put(`${API_URL}/form/update`, {
         id,
@@ -83,8 +86,10 @@ const Admin = () => {
     } catch (error) {
       message.error("Error updating status");
       console.error("API call error:", error);
-    } finally{
-      setBtnLoading(false);
+    } finally {
+      // Reset both loading states after completion
+      setLoadingApproveId(null);
+      setLoadingRejectId(null);
     }
   };
 
@@ -116,7 +121,13 @@ const Admin = () => {
   };
 
   const handleFilter = () => {
+    if (!dateRange && !emailFilter) {
+      setFilteredData(data);
+      return;
+    }
     const [startDate, endDate] = dateRange;
+
+    // Filter data based on date range and email filter
     const filtered = data
       .filter((item) => {
         const itemDate = moment(item.date, DATE_FORMAT);
@@ -147,7 +158,7 @@ const Admin = () => {
       sorter: (a, b) => a.isApproved.localeCompare(b.isApproved),
       render: (isApproved) => {
         const status = isApproved.split(" ")[0];
-  
+
         return (
           <div className="flex items-center">
             {status === "Pending" && (
@@ -202,7 +213,7 @@ const Admin = () => {
                   handleApprove(record._id);
                 }}
                 className="bg-green-500 hover:bg-green-600 text-white border-none"
-                loading={btnLoading}
+                loading={loadingApproveId === record._id} // Load only the clicked Approve button
               >
                 Approve
               </Button>
@@ -214,13 +225,15 @@ const Admin = () => {
                   handleReject(record._id);
                 }}
                 className="bg-red-500 hover:bg-red-600 text-white border-none"
-                loading={btnLoading}
+                loading={loadingRejectId === record._id} // Load only the clicked Reject button
               >
                 Reject
               </Button>
             </>
           ) : (
-            <span style={{ color: "grey" }}>{record.isApproved.split(" ")[0]}</span>
+            <span style={{ color: "grey" }}>
+              {record.isApproved.split(" ")[0]}
+            </span>
           )}
         </div>
       ),
@@ -228,7 +241,6 @@ const Admin = () => {
   ];
 
   const handleLogout = () => {
-    // Clear localStorage and redirect to login page
     localStorage.clear();
     window.location.href = "/private/login";
   };
@@ -258,31 +270,47 @@ const Admin = () => {
         </div>
 
         <div className="flex-grow">
+          <Table
+            dataSource={filteredData.sort((a, b) => {
+              if (
+                a.isApproved.split(" ")[0] === "Pending" &&
+                b.isApproved.split(" ")[0] !== "Pending"
+              ) {
+                return -1;
+              }
+              if (
+                a.isApproved.split(" ")[0] !== "Pending" &&
+                b.isApproved.split(" ")[0] === "Pending"
+              ) {
+                return 1; 
+              }
 
-        <Table
-          dataSource={filteredData}
-          columns={columns}
-          loading={loading}
-          rowKey="_id"
-          pagination={{ pageSize: 10 }}
-          onRow={(record) => ({
-            onClick: () => handleRowClick(record),
-          })}
-          rowClassName={(record) =>
-            record.isApproved !== "Pending" ? "text-gray-400" : ""
-          }
+              return moment(b.date, DATE_FORMAT) - moment(a.date, DATE_FORMAT);
+            })}
+            columns={columns}
+            loading={loading}
+            rowKey="_id"
+            pagination={{ pageSize: 10 }}
+            onRow={(record) => ({
+              onClick: () => handleRowClick(record),
+            })}
+            rowClassName={(record) =>
+              record.isApproved.split(" ")[0] !== "Pending"
+                ? "text-gray-400"
+                : ""
+            }
           />
-           {/* Logout Button */}
-        <div className="flex justify-center mt-4">
-          <Button
-            type="danger"
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white !important"
-          >
-            Logout
-          </Button>
-        </div>
+
+          <div className="flex justify-center mt-4">
+            <Button
+              type="danger"
+              onClick={handleLogout}
+              className="bg-red-500 hover:bg-red-600 text-white !important"
+            >
+              Logout
+            </Button>
           </div>
+        </div>
       </div>
 
       <DetailsModal
